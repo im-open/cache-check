@@ -1,0 +1,20 @@
+name: 'cache-check'
+description: 'Check if a cache artifact exists without downloading the cache'
+
+inputs:
+  paths:
+    description: 'The list of files, directories and wildcard patterns that were used when saving the cache'
+    required: true
+  key:
+    description: 'The key for the cache to check'
+    required: true
+
+outputs:
+  cache-hit:
+    description: 'Flag indicating whether an exact match was found for the cache key'
+  key:
+    description: 'The key for the cache (same as `key` input)'
+
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
