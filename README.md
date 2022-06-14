@@ -1,511 +1,145 @@
-# cache
+# check-for-cache
 
-These actions allow caching dependencies and build outputs to eliminate duplicate work and improve workflow execution time. **The main advantage of this fork over the base is sharing data across multiple jobs.** You do not need to use artifacts and can skip various steps, saving as much runtime as possible.
+This is a fork of [martijnhols/actions-cache] at version 3.0.4 but only contains a slimmed down version of the [check] action.  
 
-The following actions are available:
+This action will check if an exact match is available in the cache without downloading it.  Caches have unique versions based on the compression tool used and the path of the directories being cached.  As a result, caches generated on one OS cannot be restored on a machine with a different OS.  See [actions/cache docs] for more details.
 
-- `martijnhols/actions-cache@v3`
-- `martijnhols/actions-cache/restore@v3`
-- `martijnhols/actions-cache/save@v3`
-- `martijnhols/actions-cache/check@v3`
+If you need an action that downloads or saves a cache, checkout the official [actions/cache] action.
 
-While this is a fork, there are currently no plans to merge this into GitHub's [actions/cache](https://github.com/actions/cache) since GitHub does not appear to be reviewing [P](https://github.com/actions/cache/pull/466)[R](https://github.com/actions/cache/pull/474)[s](https://github.com/actions/toolkit/pull/659) and so making this mergeable would be a waste of time. This repository will be available on its own.
+## Index
 
-- [Action documentation](#actions)
-- [Recipes](#recipes)
+- [Inputs](#inputs)
+- [Outputs](#outputs)
+- [Usage Examples](#usage-examples)
+- [Contributing](#contributing)
+  - [Recompiling](#recompiling)
+  - [Incrementing the Version](#incrementing-the-version)
+- [Code of Conduct](#code-of-conduct)
+- [License](#license)
 
-## Actions
+## Inputs
 
-### martijnhols/actions-cache
+| Parameter | Is Required | Description                                                                               |
+| --------- | ----------- | ----------------------------------------------------------------------------------------- |
+| `path`    | true        | The list of files, directories and wildcard patterns that were used when saving the cache |
+| `key`     | true        | The key for the cache to check                                                            |
 
-This is the base action largely matching GitHub's [actions/cache](https://github.com/actions/cache). Under the hood this calls the `restore` action where you place the action, and the `save` action just before the job finishes.
+## Outputs
 
-This can be used for caching a step such as installing dependencies which are not re-used in other jobs. If you want to reuse your data in other jobs, use one of the other actions.
+| Output      | Description                                                        | Possible Values |
+| ----------- | ------------------------------------------------------------------ | --------------- |
+| `cache-hit` | Flag indicating whether an exact match was found for the cache key | `true,false`    |
+| `key`       | The key for the cache (same as `key` input)                        |                 |
 
-#### Inputs
+## Usage Examples
 
-* `path` - **Required** - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns. 
-* `key` - **Required** - An explicit key for restoring and saving the cache
-* `restore-keys` - An ordered list of keys to use for restoring the cache if no cache hit occurred for key
-* `upload-chunk-size` - The chunk size used to split up large files during upload, in bytes
-
-#### Outputs
-
-* `cache-hit` - A boolean value to indicate an exact match was found for the key
-* `primary-key` - The primary key for restoring or saving exactly matching cache.
-
-> See [Skipping steps based on cache-hit](#Skipping-steps-based-on-cache-hit) for info on using this output
-
-### martijnhols/actions-cache/restore
-
-This action will read data from the cache and place it in at the provided path.
-
-#### Inputs
-
-* `path` - **Required** - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns. 
-* `key` - **Required** - An explicit key for restoring and saving the cache
-* `restore-keys` - An ordered list of keys to use for restoring the cache if no cache hit occurred for key
-* `required` - When set to `true`, the action will fail if an exact match could not be found.
-
-#### Outputs
-
-* `cache-hit` - A boolean value to indicate an exact match was found for the key
-* `primary-key` - The primary key for restoring or saving exactly matching cache.
-
-### martijnhols/actions-cache/save
-
-This action will save data at the provided path to the cache.
-
-#### Inputs
-
-* `path` - **Required** - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns. 
-* `key` - **Required** - An explicit key for restoring and saving the cache
-* `upload-chunk-size` - The chunk size used to split up large files during upload, in bytes
-
-Tip: when combined with the `restore` or `check` action, add the `id: cache` property to the `restore`/`check` action and use `key: ${{ steps.cache.outputs.primary-key }}` in the `save` action. This ensures your cache key is not recomputed, which may otherwise lead to issues.
-
-### martijnhols/actions-cache/check
-
-This action will check if an exact match is available in the cache without downloading it.
-
-#### Inputs
-
-* `path` - **Required** - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns. 
-* `key` - **Required** - An explicit key for restoring and saving the cache
-
-#### Outputs
-
-* `cache-hit` - A boolean value to indicate an exact match was found for the key
-* `primary-key` - The primary key for restoring or saving exactly matching cache.
-
-## Recipes
-
-These recipes serve as examples. For simplicity sake some irrelevant steps (such as setup-node) are omitted.
-
-<details id="just-caching">
-<summary><a href="#just-caching">🔗</a> Just caching</summary>
-
-This caches `node_modules` folder. Using the [Skipping steps based on cache-hit](#skipping-steps-based-on-cache-hit) solution, this only installs dependencies if the cache did not return an exact match.
-
-If no exact match could be found, it uses a *restore-key* to restore an older cache since the tool we use (yarn) can reuse existing files to save time.
-
-```yaml
-name: Build app
-
-on: push
+```yml
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
+  setup-caches:
+    runs-on: ubuntu-20.04
+    outputs:
+      NPM_CACHE_KEY: ${{ env.NPM_CACHE_KEY }}
+      HAS_NPM_CACHE: ${{ steps.has-npm-cache.outputs.cache-hit }}
+      
     steps:
-    - uses: actions/checkout@v2
-
-    - name: Cache node_modules
-      id: cache
-      uses: martijnhols/actions-cache@v3
-      with:
-        # Cache the node_modules folder and its contents
-        path: node_modules
-        # Genarate a unique key based on the runner OS, an id, and a hash that changes whenever the `yarn.lock` file or any file in the `patches` folder changes.
-        key: ${{ runner.os }}-node_modules-${{ hashFiles('yarn.lock', 'patches') }}
-        # If no exact match is found, look for the most recent cache entry with this key:
-        restore-keys: ${{ runner.os }}-node_modules
-
-    - name: Install dependencies
-      # Only install dependencies only when no exact match was found in the cache
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: yarn install
-
-    - name: Build app
-      run: yarn build
-```
-</details>
-
-<details id="just-caching-manual">
-<summary><a href="#just-caching-manual">🔗</a> Just caching with manual control</summary>
-
-This behaves the same as the [Just caching](#just-caching) recipe, but uses the `restore` and `save` actions manually. This has no significant benefits over using the standard action, though I prefer it for its minor readability and maintainability improvements.
-
-```yaml
-name: Build app
-
-on: push
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
+      - uses: actions/checkout@v3
+        
+      - name: Set Cache Keys
+        run: echo "NPM_CACHE_KEY=node_modules-${{ hashFiles('package-lock.json', '**/package-lock.json') }}" >> $GITHUB_ENV
+          
+      - name: Check for an npm cache
+        id: has-npm-cache
+        uses: im-open/check-for-cache@v1.0.0
+        with:
+          paths:  '**/node_modules'
+          key: ${{ env.NPM_CACHE_KEY }}
+      
+  create-npm-cache:
+    runs-on: ubuntu-20.04
+    needs: [ setup-caches ]
+    if: needs.setup-caches.outputs.HAS_NPM_CACHE == 'false'
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        
+      # This action will upload the node_modules dir to the cache if the job completes successfully.
+      # Subsequent jobs/workflow runs can use this cached copy if the package-lock.json hasn't changed
+      # and they are also using a ubuntu-20.04 runner to restore the cache from.
+      - name: Setup caching for node_modules directory
+        uses: actions/cache@v2
+        id: module-cache
+        with:
+          key: ${{ needs.set-cache-keys.outputs.NPM_MODULES_CACHE_KEY }}
+          path: '**/node_modules'
 
-    - name: Restore "node_modules" from cache
-      id: cache
-      uses: martijnhols/actions-cache/restore@v3
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-node_modules-${{ hashFiles('yarn.lock', 'patches') }}
-        restore-keys: ${{ runner.os }}-node_modules
-
-    - name: Install dependencies
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: yarn install
-
-    - name: Build app
-      run: yarn build
-
-    - name: Save "node_modules" to cache
-      # No need to save identical data when an exact match was found
-      if: steps.cache.outputs.cache-hit != 'true'
-      uses: martijnhols/actions-cache/save@v3
-      with:
-        path: node_modules
-        # Re-use the primary-key from the restore action to ensure it is not recomputed. This could otherwise cause issues if our "build" step modifies files within one of the `hashFiles` directories.
-        key: ${{ steps.cache.outputs.primary-key }}
-```
-</details>
-
-<details id="share-cache">
-<summary><a href="#share-cache">🔗</a> Share cache across jobs</summary>
-
-This extends the [Just caching with manual control](#just-caching-manual) recipe.
-
-When your workflow grows and you add more checks, you will want to split up your jobs. Using the cache you can share dependencies across multiple jobs efficiently.
-
-This moves the `install` step to its own job and restores dependencies from cache when it gets time to build the app. The cache can be restored in multiple jobs simultaneously.
-
-```yaml
-name: Build app
-
-on: push
-
-jobs:
-  install:
-    runs-on: ubuntu-latest
+      - run: npm ci
+  
+  jest:
+    runs-on: ubuntu-20.04
+    needs: [ setup-caches, create-npm-cache ]
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+        
+      - name: Download the node_modules folder from the cache
+        id: get-cached-node-modules
+        uses: actions/cache@v2
+        with:
+          key: ${{ needs.set-cache-keys.outputs.NPM_MODULES_CACHE_KEY }}
+          path: '**/node_modules'
 
-    - name: Restore "node_modules" from cache
-      id: cache
-      uses: martijnhols/actions-cache/restore@v3
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-node_modules-${{ hashFiles('yarn.lock', 'patches') }}
-        restore-keys: ${{ runner.os }}-node_modules
+      - name: Rebuild Node Modules
+        run: npm rebuild
 
-    - name: Install dependencies
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: yarn install
-
-    - name: Save "node_modules" to cache
-      if: steps.cache.outputs.cache-hit != 'true'
-      uses: martijnhols/actions-cache/save@v3
-      with:
-        path: node_modules
-        key: ${{ steps.cache.outputs.primary-key }}
-
-  build:
-    needs: [install]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Restore "node_modules" from cache
-      uses: martijnhols/actions-cache/restore@v3
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-node_modules-${{ hashFiles('yarn.lock', 'patches') }}
-        # Fail when the cache could not be found (this should never happen unless you have a misconfiguration)
-        required: true
-
-    - name: Build app
-      run: yarn build
-```
-</details>
-
-<details id="cache-build">
-<summary><a href="#cache-build">🔗</a> Cache build output and skipping build</summary>
-
-This extends the [Share cache across jobs](#share-cache) recipe.
-
-When you want to publish your build, you probably want to do this in a separate step. Using the [Share cache across jobs](#share-cache) recipe you can also reuse your build (we add this in step 1).
-
-As a bonus, you can skip building the app entirely if an exact match was found (we add this in step 2). This is especially useful in monorepos, where only a few apps need to be build each run.
-
-**NOTE:** Take extra care when choosing a cache key. Builds often involve many different configuration files, if you forget to add a file it may not trigger a rebuild when it is changed.
-
-**Step 1/2: First, let's add a publish job**
-
-```yaml
-name: Build app
-
-on: push
-
-jobs:
-  install:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Restore "node_modules" from cache
-      id: cache
-      uses: martijnhols/actions-cache/restore@v3
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-node_modules-${{ hashFiles('yarn.lock', 'patches') }}
-        restore-keys: ${{ runner.os }}-node_modules
-
-    - name: Install dependencies
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: yarn install
-
-    - name: Save "node_modules" to cache
-      if: steps.cache.outputs.cache-hit != 'true'
-      uses: martijnhols/actions-cache/save@v3
-      with:
-        path: node_modules
-        key: ${{ steps.cache.outputs.primary-key }}
-
-  build:
-    needs: [install]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Restore "node_modules" from cache
-      uses: martijnhols/actions-cache/restore@v3
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-node_modules-${{ hashFiles('yarn.lock', 'patches') }}
-        required: true
-
-    - name: Build app
-      run: yarn build
-
-    # Notice that we do not use a "restore" in this job: the build in our imaginary project can't reuse its own build files so restoring that before building would be a waste of time.
-    - name: Save "build" to cache
-      uses: martijnhols/actions-cache/save@v3
-      with:
-        path: build
-        key: ${{ runner.os }}-node_modules-${{ hashFiles('yarn.lock', 'patches', 'src', '.babelrc') }}
-
-  publish:
-    needs: [install]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Restore "build" from cache
-      uses: martijnhols/actions-cache/restore@v3
-      with:
-        path: build
-        key: ${{ runner.os }}-node_modules-${{ hashFiles('yarn.lock', 'patches', 'src', '.babelrc') }}
-        required: true
-
-    - name: Publish app
-      run: yarn publish
+      - name: jest test with coverage
+        run: npm test -- --json --outputFile=jest-results.json --coverage
+      
+    
 ```
 
-**Step 2/2: Now we use `check` to skip steps if the app was already built**
+## Contributing
 
-(This only changes made in this yml are in the `build` job)
+When creating new PRs please ensure:
+1. The action has been recompiled.  See the [Recompiling](#recompiling) section below for more details.
+2. For major or minor changes, at least one of the commit messages contains the appropriate `+semver:` keywords listed under [Incrementing the Version](#incrementing-the-version).
+3. The `README.md` example has been updated with the new version.  See [Incrementing the Version](#incrementing-the-version).
+4. The action code does not contain sensitive information.
 
-```yaml
-name: Build app
+### Recompiling
 
-on: push
+If changes are made to the action's code in this repository, or its dependencies, you will need to re-compile the action.
 
-jobs:
-  install:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
+```sh
+# Installs dependencies and bundles the code
+npm run build
 
-    - name: Restore "node_modules" from cache
-      id: cache
-      uses: martijnhols/actions-cache/restore@v3
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-node_modules-${{ hashFiles('yarn.lock', 'patches') }}
-        restore-keys: ${{ runner.os }}-node_modules
-
-    - name: Install dependencies
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: yarn install
-
-    - name: Save "node_modules" to cache
-      if: steps.cache.outputs.cache-hit != 'true'
-      uses: martijnhols/actions-cache/save@v3
-      with:
-        path: node_modules
-        key: ${{ steps.cache.outputs.primary-key }}
-
-  build:
-    needs: [install]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-
-    # Using martijnhols/actions-cache/check we check if a cache entry exists without downloading it
-    - name: Check if "build" is already cached
-      uses: martijnhols/actions-cache/check@v3
-      id: cache
-      with:
-        path: build
-        key: ${{ runner.os }}-node_modules-${{ hashFiles('yarn.lock', 'patches', 'src', '.babelrc') }}
-
-    - name: Restore "node_modules" from cache
-      # Only execute if the build isn't already in cache
-      if: steps.cache.outputs.cache-hit != 'true'
-      uses: martijnhols/actions-cache/restore@v3
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-node_modules-${{ hashFiles('yarn.lock', 'patches') }}
-        required: true
-
-    - name: Build app
-      # Only execute if the build isn't already in cache
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: yarn build
-
-    # Notice that we do not use a "restore" in this job: the build in our imaginary project can't reuse its own build files so restoring that before building would be a waste of time.
-    - name: Save "build" to cache
-      # Only execute if the build isn't already in cache
-      if: steps.cache.outputs.cache-hit != 'true'
-      uses: martijnhols/actions-cache/save@v3
-      with:
-        path: build
-        key: ${{ runner.os }}-node_modules-${{ hashFiles('yarn.lock', 'patches', 'src', '.babelrc') }}
-
-  publish:
-    needs: [install]
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Restore "build" from cache
-      uses: martijnhols/actions-cache/restore@v3
-      with:
-        path: build
-        key: ${{ runner.os }}-node_modules-${{ hashFiles('yarn.lock', 'patches', 'src', '.babelrc') }}
-        required: true
-
-    - name: Publish app
-      run: yarn publish
-```
-</details>
-
-<details id="save-regardless-of-failure">
-<summary><a href="#save-regardless-of-failure">🔗</a> Save cache regardless of job success/failure</summary>
-
-This extends the [Just caching](#just-caching) recipe.
-
-When you have multiple build steps in a single job, you may want to save your data regardless of the job failing. In this case splitting up the cache actions like in the [Just caching with manual control](#just-caching-manual) recipe and moving the save action above your flaky build step achieves this.
-
-If you want your cache to be saved regardless of a failure during the install step, you can change the `if: steps.cache.outputs.cache-hit != 'true'` line into `if: always() && steps.cache.outputs.cache-hit != 'true'`.
-
-```yaml
-name: Build app
-
-on: push
-
-jobs:
-  install:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Restore "node_modules" from cache
-      id: cache
-      uses: martijnhols/actions-cache/restore@v3
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-node_modules-${{ hashFiles('yarn.lock', 'patches') }}
-        restore-keys: ${{ runner.os }}-node_modules
-
-    - name: Install dependencies
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: yarn install
-
-    - name: Save "node_modules" to cache
-      if: steps.cache.outputs.cache-hit != 'true'
-      uses: martijnhols/actions-cache/save@v3
-      with:
-        path: node_modules
-        key: ${{ steps.cache.outputs.primary-key }}
-
-    - name: Run flaky tests
-      run: yarn test
-```
-</details>
-
-## Creating a cache key
-
-A cache key can include any of the contexts, functions, literals, and operators supported by GitHub Actions.
-
-For example, using the [`hashFiles`](https://help.github.com/en/actions/reference/context-and-expression-syntax-for-github-actions#hashfiles) function allows you to create a new cache when dependencies change.
-
-```yaml
-  - uses: actions/cache@v2
-    with:
-      path: | 
-        path/to/dependencies
-        some/other/dependencies 
-      key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
+# Bundle the code (if dependencies are already installed)
+npm run bundle
 ```
 
-Additionally, you can use arbitrary command output in a cache key, such as a date or software version:
+These commands utilize [esbuild](https://esbuild.github.io/getting-started/#bundling-for-node) to bundle the action and
+its dependencies into a single file located in the `dist` folder.
 
-```yaml
-  # http://man7.org/linux/man-pages/man1/date.1.html
-  - name: Get Date
-    id: get-date
-    run: |
-      echo "::set-output name=date::$(/bin/date -u "+%Y%m%d")"
-    shell: bash
+### Incrementing the Version
 
-  - uses: actions/cache@v2
-    with:
-      path: path/to/dependencies
-      key: ${{ runner.os }}-${{ steps.get-date.outputs.date }}-${{ hashFiles('**/lockfiles') }}
-```
+This action uses [git-version-lite] to examine commit messages to determine whether to perform a major, minor or patch increment on merge.  The following table provides the fragment that should be included in a commit message to active different increment strategies.
+| Increment Type | Commit Message Fragment                     |
+| -------------- | ------------------------------------------- |
+| major          | +semver:breaking                            |
+| major          | +semver:major                               |
+| minor          | +semver:feature                             |
+| minor          | +semver:minor                               |
+| patch          | *default increment type, no comment needed* |
 
-See [Using contexts to create cache keys](https://help.github.com/en/actions/configuring-and-managing-workflows/caching-dependencies-to-speed-up-workflows#using-contexts-to-create-cache-keys)
+## Code of Conduct
 
-If you are only using the save action, sometimes you need to compute the cache-key before generating the artifact you wish to cache. This ensures the generated artifact does not affect the cache-key. This can be achieved with basic actions syntax:
-```yaml
-      - name: Generate react-native cache key
-        id: cache-key
-        run: echo "::set-output name=value::my-cache-key-${{ hashFiles('react-native') }}"
-```
-
-## Cache Limits
-
-A repository can have up to 5GB of caches. Once the 5GB limit is reached, older caches will be evicted based on when the cache was last accessed. Caches that are not accessed within the last week will also be evicted.
-
-> I have personally never encountered issues with cache being evicted. If the total cache used in your workflows approaches the 5GB limit I recommend reconsidering using cache for sharing data across jobs.
-
-## Skipping steps based on cache-hit
-
-Using the `cache-hit` output, subsequent steps (such as install or build) can be skipped when a cache hit occurs on the key.
-
-Example:
-```yaml
-steps:
-  - uses: actions/checkout@v2
-
-  - uses: actions/cache@v2
-    id: cache
-    with:
-      path: path/to/dependencies
-      key: ${{ runner.os }}-${{ hashFiles('**/lockfiles') }}
-
-  - name: Install Dependencies
-    if: steps.cache.outputs.cache-hit != 'true'
-    run: /install.sh
-```
-
-> Note: The `id` defined in `actions/cache` must match the `id` in the `if` statement (i.e. `steps.[ID].outputs.cache-hit`)
+This project has adopted the [im-open's Code of Conduct](https://github.com/im-open/.github/blob/main/CODE_OF_CONDUCT.md).
 
 ## License
-The scripts and documentation in this project are released under the [MIT License](LICENSE)
+
+Copyright &copy; 2022, Extend Health, LLC. Code released under the [MIT license](LICENSE).
+
+[git-version-lite]: https://github.com/im-open/git-version-lite
+[actions/cache docs]: https://github.com/actions/cache#cache-version
+[actions/cache]: https://github.com/actions/cache
+[check]: https://github.com/MartijnHols/actions-cache/blob/main/check/action.yml
+[martijnhols/actions-cache]: https://github.com/MartijnHols/actions-cache
