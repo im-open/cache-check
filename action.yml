@@ -1,29 +1,20 @@
-name: 'Cache'
-description: 'Cache artifacts like dependencies and build outputs to improve workflow execution time'
-author: 'Martijn Hols (forked from the GitHub cache action)'
+name: 'cache-check'
+description: 'Check if a cache artifact exists'
 inputs:
   path:
-    description: 'A list of files, directories, and wildcard patterns to cache and restore'
+    description: 'The list of files, directories, and wildcard patterns that was used when saving the cache'
     required: true
   key:
-    description: 'An explicit key for restoring and saving the cache'
+    description: 'An explicit key for the cache'
     required: true
-  restore-keys:
-    description: 'An ordered list of keys to use for restoring the cache if no cache hit occurred for key'
-    required: false
-  upload-chunk-size:
-    description: 'The chunk size used to split up large files during upload, in bytes'
-    required: false
 outputs:
   cache-hit:
     description: 'A boolean value to indicate an exact match was found for the primary key'
   primary-key:
-    description: 'The primary key for reading or saving exactly matching cache.'
+    description: 'The primary key that should be used when saving the cache.'
 runs:
   using: 'node12'
-  main: 'dist/restore/index.js'
-  post: 'dist/save/index.js'
-  post-if: 'success()'
+  main: './dist/index.js'
 branding:
   icon: 'archive'
   color: 'gray-dark'

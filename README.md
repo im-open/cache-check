@@ -1,68 +1,11 @@
-# cache
+# cache-check
 
-These actions allow caching dependencies and build outputs to eliminate duplicate work and improve workflow execution time. **The main advantage of this fork over the base is sharing data across multiple jobs.** You do not need to use artifacts and can skip various steps, saving as much runtime as possible.
-
-The following actions are available:
-
-- `martijnhols/actions-cache@v3`
-- `martijnhols/actions-cache/restore@v3`
-- `martijnhols/actions-cache/save@v3`
-- `martijnhols/actions-cache/check@v3`
-
-While this is a fork, there are currently no plans to merge this into GitHub's [actions/cache](https://github.com/actions/cache) since GitHub does not appear to be reviewing [P](https://github.com/actions/cache/pull/466)[R](https://github.com/actions/cache/pull/474)[s](https://github.com/actions/toolkit/pull/659) and so making this mergeable would be a waste of time. This repository will be available on its own.
+This is a fork of [martijnhols/actions-cache/check] action at version 3.  The fork is necessary because [im-open] developers are limited to verified creators or custom actions in their own Enterprise.
 
 - [Action documentation](#actions)
 - [Recipes](#recipes)
 
 ## Actions
-
-### martijnhols/actions-cache
-
-This is the base action largely matching GitHub's [actions/cache](https://github.com/actions/cache). Under the hood this calls the `restore` action where you place the action, and the `save` action just before the job finishes.
-
-This can be used for caching a step such as installing dependencies which are not re-used in other jobs. If you want to reuse your data in other jobs, use one of the other actions.
-
-#### Inputs
-
-* `path` - **Required** - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns. 
-* `key` - **Required** - An explicit key for restoring and saving the cache
-* `restore-keys` - An ordered list of keys to use for restoring the cache if no cache hit occurred for key
-* `upload-chunk-size` - The chunk size used to split up large files during upload, in bytes
-
-#### Outputs
-
-* `cache-hit` - A boolean value to indicate an exact match was found for the key
-* `primary-key` - The primary key for restoring or saving exactly matching cache.
-
-> See [Skipping steps based on cache-hit](#Skipping-steps-based-on-cache-hit) for info on using this output
-
-### martijnhols/actions-cache/restore
-
-This action will read data from the cache and place it in at the provided path.
-
-#### Inputs
-
-* `path` - **Required** - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns. 
-* `key` - **Required** - An explicit key for restoring and saving the cache
-* `restore-keys` - An ordered list of keys to use for restoring the cache if no cache hit occurred for key
-* `required` - When set to `true`, the action will fail if an exact match could not be found.
-
-#### Outputs
-
-* `cache-hit` - A boolean value to indicate an exact match was found for the key
-* `primary-key` - The primary key for restoring or saving exactly matching cache.
-
-### martijnhols/actions-cache/save
-
-This action will save data at the provided path to the cache.
-
-#### Inputs
-
-* `path` - **Required** - A list of files, directories, and wildcard patterns to cache and restore. See [`@actions/glob`](https://github.com/actions/toolkit/tree/main/packages/glob) for supported patterns. 
-* `key` - **Required** - An explicit key for restoring and saving the cache
-* `upload-chunk-size` - The chunk size used to split up large files during upload, in bytes
-
-Tip: when combined with the `restore` or `check` action, add the `id: cache` property to the `restore`/`check` action and use `key: ${{ steps.cache.outputs.primary-key }}` in the `save` action. This ensures your cache key is not recomputed, which may otherwise lead to issues.
 
 ### martijnhols/actions-cache/check
 

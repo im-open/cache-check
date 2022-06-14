@@ -59385,330 +59385,6 @@ module.exports = v4;
 
 /***/ }),
 
-/***/ 3160:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __importStar(__nccwpck_require__(2186));
-const utils = __importStar(__nccwpck_require__(6850));
-const getCacheKey_1 = __importDefault(__nccwpck_require__(1230));
-const save_1 = __importDefault(__nccwpck_require__(7031));
-const validate_1 = __importDefault(__nccwpck_require__(6560));
-// Catch and log any unhandled exceptions.  These exceptions can leak out of the uploadChunk method in
-// @actions/toolkit when a failed upload closes the file descriptor causing any in-process reads to
-// throw an uncaught exception.  Instead of failing this action, just warn.
-process.on("uncaughtException", e => utils.logWarning(e.message));
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        try {
-            validate_1.default();
-            // Get the primary key from inputs. On correct usage, this will be the
-            // output from either the getCacheKey, check or read actions.
-            const primaryKey = getCacheKey_1.default();
-            yield save_1.default(primaryKey);
-        }
-        catch (error) {
-            core.setFailed(error.message);
-        }
-    });
-}
-run();
-exports.default = run;
-
-
-/***/ }),
-
-/***/ 6850:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getInputAsInt = exports.getInputAsArray = exports.isValidEvent = exports.logWarning = exports.getCacheState = exports.setOutputAndState = exports.setPrimaryKeyOutput = exports.setCacheHitOutput = exports.setCacheState = exports.isExactKeyMatch = exports.isGhes = void 0;
-const core = __importStar(__nccwpck_require__(2186));
-const constants_1 = __nccwpck_require__(8593);
-function isGhes() {
-    const ghUrl = new URL(process.env["GITHUB_SERVER_URL"] || "https://github.com");
-    return ghUrl.hostname.toUpperCase() !== "GITHUB.COM";
-}
-exports.isGhes = isGhes;
-function isExactKeyMatch(key, cacheKey) {
-    return !!(cacheKey &&
-        cacheKey.localeCompare(key, undefined, {
-            sensitivity: "accent"
-        }) === 0);
-}
-exports.isExactKeyMatch = isExactKeyMatch;
-function setCacheState(state) {
-    core.saveState(constants_1.State.CacheMatchedKey, state);
-}
-exports.setCacheState = setCacheState;
-function setCacheHitOutput(isCacheHit) {
-    core.setOutput(constants_1.Outputs.CacheHit, isCacheHit.toString());
-}
-exports.setCacheHitOutput = setCacheHitOutput;
-function setPrimaryKeyOutput(primaryKey) {
-    core.setOutput(constants_1.Outputs.PrimaryKey, primaryKey);
-}
-exports.setPrimaryKeyOutput = setPrimaryKeyOutput;
-function setOutputAndState(key, cacheKey) {
-    setCacheHitOutput(isExactKeyMatch(key, cacheKey));
-    // Store the matched cache key if it exists
-    cacheKey && setCacheState(cacheKey);
-}
-exports.setOutputAndState = setOutputAndState;
-function getCacheState() {
-    const cacheKey = core.getState(constants_1.State.CacheMatchedKey);
-    if (cacheKey) {
-        core.debug(`Cache state/key: ${cacheKey}`);
-        return cacheKey;
-    }
-    return undefined;
-}
-exports.getCacheState = getCacheState;
-function logWarning(message) {
-    const warningPrefix = "[warning]";
-    core.info(`${warningPrefix}${message}`);
-}
-exports.logWarning = logWarning;
-// Cache token authorized for all events that are tied to a ref
-// See GitHub Context https://help.github.com/actions/automating-your-workflow-with-github-actions/contexts-and-expression-syntax-for-github-actions#github-context
-function isValidEvent() {
-    return constants_1.RefKey in process.env && Boolean(process.env[constants_1.RefKey]);
-}
-exports.isValidEvent = isValidEvent;
-function getInputAsArray(name, options) {
-    return core
-        .getInput(name, options)
-        .split("\n")
-        .map(s => s.trim())
-        .filter(x => x !== "");
-}
-exports.getInputAsArray = getInputAsArray;
-function getInputAsInt(name, options) {
-    const value = parseInt(core.getInput(name, options));
-    if (isNaN(value) || value < 0) {
-        return undefined;
-    }
-    return value;
-}
-exports.getInputAsInt = getInputAsInt;
-
-
-/***/ }),
-
-/***/ 8593:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.RefKey = exports.Events = exports.State = exports.Outputs = exports.Inputs = void 0;
-var Inputs;
-(function (Inputs) {
-    Inputs["Key"] = "key";
-    Inputs["Path"] = "path";
-    Inputs["RestoreKeys"] = "restore-keys";
-    Inputs["UploadChunkSize"] = "upload-chunk-size";
-    Inputs["Required"] = "required";
-})(Inputs = exports.Inputs || (exports.Inputs = {}));
-var Outputs;
-(function (Outputs) {
-    Outputs["CacheHit"] = "cache-hit";
-    Outputs["PrimaryKey"] = "primary-key";
-})(Outputs = exports.Outputs || (exports.Outputs = {}));
-var State;
-(function (State) {
-    State["CachePrimaryKey"] = "CACHE_KEY";
-    State["CacheMatchedKey"] = "CACHE_RESULT";
-})(State = exports.State || (exports.State = {}));
-var Events;
-(function (Events) {
-    Events["Key"] = "GITHUB_EVENT_NAME";
-    Events["Push"] = "push";
-    Events["PullRequest"] = "pull_request";
-})(Events = exports.Events || (exports.Events = {}));
-exports.RefKey = "GITHUB_REF";
-
-
-/***/ }),
-
-/***/ 1230:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __importStar(__nccwpck_require__(2186));
-const constants_1 = __nccwpck_require__(8593);
-function getCacheKey() {
-    return core.getInput(constants_1.Inputs.Key, { required: true });
-}
-exports.default = getCacheKey;
-
-
-/***/ }),
-
-/***/ 7031:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const core = __importStar(__nccwpck_require__(2186));
-const cache = __importStar(__nccwpck_require__(5977));
-const utils = __importStar(__nccwpck_require__(6850));
-const constants_1 = __nccwpck_require__(8593);
-function save(primaryKey) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const cachePaths = utils.getInputAsArray(constants_1.Inputs.Path, {
-            required: true
-        });
-        try {
-            yield cache.saveCache(cachePaths, primaryKey, {
-                uploadChunkSize: utils.getInputAsInt(constants_1.Inputs.UploadChunkSize)
-            });
-            core.info(`Cache saved with key: ${primaryKey}`);
-        }
-        catch (error) {
-            if (error.name === cache.ValidationError.name) {
-                throw error;
-            }
-            else if (error.name === cache.ReserveCacheError.name) {
-                core.info(error.message);
-            }
-            else {
-                utils.logWarning(error.message);
-            }
-        }
-    });
-}
-exports.default = save;
-
-
-/***/ }),
-
-/***/ 6560:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const actionUtils_1 = __nccwpck_require__(6850);
-const constants_1 = __nccwpck_require__(8593);
-function validate() {
-    if (actionUtils_1.isGhes()) {
-        throw new Error("Cache action is not supported on GHES. See https://github.com/actions/cache/issues/505 for more details");
-    }
-    // Validate inputs, this can cause task failure
-    if (!actionUtils_1.isValidEvent()) {
-        throw new Error(`Event Validation Error: The event type ${process.env[constants_1.Events.Key]} is not supported because it's not tied to a branch or tag ref.`);
-    }
-}
-exports.default = validate;
-
-
-/***/ }),
-
 /***/ 2877:
 /***/ ((module) => {
 
@@ -59918,17 +59594,94 @@ module.exports = require("zlib");
 /******/ 	}
 /******/ 	
 /************************************************************************/
+/******/ 	/* webpack/runtime/compat get default export */
+/******/ 	(() => {
+/******/ 		// getDefaultExport function for compatibility with non-harmony modules
+/******/ 		__nccwpck_require__.n = (module) => {
+/******/ 			var getter = module && module.__esModule ?
+/******/ 				() => (module['default']) :
+/******/ 				() => (module);
+/******/ 			__nccwpck_require__.d(getter, { a: getter });
+/******/ 			return getter;
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__nccwpck_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__nccwpck_require__.o(definition, key) && !__nccwpck_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__nccwpck_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__nccwpck_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
 /******/ 	/* webpack/runtime/compat */
 /******/ 	
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
 /******/ 	
 /************************************************************************/
-/******/ 	
-/******/ 	// startup
-/******/ 	// Load entry module and return exports
-/******/ 	// This entry module is referenced by other modules so it can't be inlined
-/******/ 	var __webpack_exports__ = __nccwpck_require__(3160);
-/******/ 	module.exports = __webpack_exports__;
-/******/ 	
+var __webpack_exports__ = {};
+// This entry need to be wrapped in an IIFE because it need to be in strict mode.
+(() => {
+"use strict";
+__nccwpck_require__.r(__webpack_exports__);
+/* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(2186);
+/* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _martijnhols_actions_cache__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(5977);
+/* harmony import */ var _martijnhols_actions_cache__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__nccwpck_require__.n(_martijnhols_actions_cache__WEBPACK_IMPORTED_MODULE_1__);
+
+
+
+// When used, this requiredArgOptions will cause the action to error if a value has not been provided.
+const requiredArgOptions = {
+  required: true,
+  trimWhitespace: true
+};
+const primaryKey = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('key', requiredArgOptions);
+const cachePathsRaw = _actions_core__WEBPACK_IMPORTED_MODULE_0__.getInput('path', requiredArgOptions);
+const cachePaths = cachePathsRaw.split('\n').map(s => s.trim()).filter(x => x !== '');
+
+
+
+async function run() {
+  try {
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('cache-hit', primaryKey);
+
+    const cacheEntry = await _martijnhols_actions_cache__WEBPACK_IMPORTED_MODULE_1__.getCacheEntry(cachePaths, primaryKey);
+    if (cacheEntry !== null) {
+      _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`✅ Cache AVAILABLE for input key: ${primaryKey}`);
+      _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('primary-key', true);
+    } else {
+      _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`❌ Cache MISSING for input key: ${primaryKey}`);
+      _actions_core__WEBPACK_IMPORTED_MODULE_0__.setOutput('primary-key', true);
+    }
+  } catch (error) {
+    _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(error.message);
+  }
+}
+
+run();
+})();
+
+module.exports = __webpack_exports__;
 /******/ })()
 ;
