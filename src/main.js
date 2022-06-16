@@ -23,7 +23,7 @@ async function run() {
       core.setOutput('cache-hit', true);
     } else {
       core.info(`❌ Cache MISSING for input key: ${primaryKey}`);
-      core.setOutput('cache-hit', true);
+      core.setOutput('cache-hit', false);
     }
   } catch (error) {
     core.setFailed(error.message);

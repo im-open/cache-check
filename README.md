@@ -26,10 +26,10 @@ If you need an action that downloads or saves a cache, checkout the official [ac
 
 ## Outputs
 
-| Output      | Description                                                        | Possible Values |
-| ----------- | ------------------------------------------------------------------ | --------------- |
-| `cache-hit` | Flag indicating whether an exact match was found for the cache key | `true,false`    |
-| `key`       | The key for the cache (same as `key` input)                        |                 |
+| Output        | Description                                                        | Possible Values |
+| ------------- | ------------------------------------------------------------------ | --------------- |
+| `cache-hit`   | Flag indicating whether an exact match was found for the cache key | `true,false`    |
+| `primary-key` | The key for the cache (same as `key` input)                        |                 |
 
 ## Usage Examples
 
@@ -50,7 +50,7 @@ jobs:
           
       - name: Check for an npm cache
         id: has-npm-cache
-        uses: im-open/check-for-cache@v1.0.0
+        uses: im-open/check-for-cache@v1.0.1
         with:
           paths:  '**/node_modules'
           key: ${{ env.NPM_CACHE_KEY }}
@@ -82,7 +82,7 @@ jobs:
         
       - name: Download the node_modules folder from the cache
         id: get-cached-node-modules
-        uses: actions/cache@v2
+        uses: im-open/restore-cache@v1.0.0
         with:
           key: ${{ needs.set-cache-keys.outputs.NPM_MODULES_CACHE_KEY }}
           path: '**/node_modules'
