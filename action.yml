@@ -13,5 +13,5 @@ outputs:
   primary-key:
     description: 'The key for the cache (same as `key` input)'
 runs:
-  using: 'node12'
+  using: 'node16'
   main: './dist/index.js'
