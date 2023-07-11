@@ -51,7 +51,7 @@ jobs:
       - name: Check for an npm cache
         id: has-npm-cache
         # You may also reference the major or major.minor version
-        uses: im-open/check-for-cache@v1.1.4
+        uses: im-open/check-for-cache@v1.1.5
         with:
           paths:  '**/node_modules'
           key: ${{ env.NPM_CACHE_KEY }}
