@@ -1,3 +1,5 @@
+# This action's purpose can now be fulfilled with the latest version of [actions/cache](https://github.com/actions/cache).
+
 # check-for-cache
 
 This is a fork of [martijnhols/actions-cache] at version 3.0.4 but only contains a slimmed down version of the [check] action.  
