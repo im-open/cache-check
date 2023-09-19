@@ -1,3 +1,6 @@
+# DEPRECATED 09-19-2023
+
+This action has been deprecated in favor of the official [actions/cache] action which now supports a cache hit check without downloading the cache.  See [actions/cache] for details on using the `lookup-only` argument.
 # check-for-cache
 
 This is a fork of [martijnhols/actions-cache] at version 3.0.4 but only contains a slimmed down version of the [check] action.  
@@ -8,6 +11,7 @@ If you need an action that downloads or saves a cache, checkout the official [ac
 
 ## Index <!-- omit in toc -->
 
+- [DEPRECATED 09-19-2023](#deprecated-09-19-2023)
 - [check-for-cache](#check-for-cache)
   - [Inputs](#inputs)
   - [Outputs](#outputs)
